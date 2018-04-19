@@ -1,0 +1,274 @@
+<!-- define the component in polymer -->
+<dom-module id="editable-button">
+  <template>
+    <style>
+      :host {
+        vertical-align: middle;
+        margin: 3px 0;
+      }
+
+      .editableButtonIcon, .editableButtonRemoveButton {
+        display: inline-flex;
+        vertical-align: middle;
+        --paper-button: {
+          background: white;
+          color: black;
+        }
+        --iron-icon-height: 1em;
+        --iron-icon-width: 1em;
+      }
+
+      paper-button {
+        display: inline-flex;
+        /* font-size: 100%; */
+        /* vertical-align: middle; */
+        height: 1.8em;
+        min-width: 0;
+        --paper-button: {
+          background: white;
+          color: black;
+        };
+      }
+
+      .editableButtonTextInput {
+        display: inline-flex;
+        align-self: center;
+      }
+
+      paper-textarea {
+        --paper-input-container-underline: {
+          display: none;
+        };
+        --paper-input-container-underline-focus: {
+          display: none;
+        };
+        --paper-input-container-underline-disabled: {
+          display: none;
+        };
+        --paper-input-container-input-focus: {
+          border: 1px solid gray;
+        };
+        --paper-input-container-input: {
+          color: black;
+        };
+        --iron-autogrow-textarea: {
+          display: inline-block;
+          vertical-align: middle;
+          line-height: 100%;
+          font-size: 100%;
+          width: 100%;
+          height: 100%;
+          white-space: nowrap;
+          text-transform: lowercase;
+        };
+      }
+
+      .margin-small {
+        margin: 10px 0px;
+      }
+
+      iron-icon.amber {
+        color: var(--paper-amber-600);
+      }
+
+      iron-icon.black {
+        color: #111;
+      }
+
+      iron-icon.blue {
+        color: var(--paper-blue-600);
+      }
+
+      iron-icon.blue-grey {
+        color: var(--paper-blue-grey-600);
+      }
+
+      iron-icon.brown {
+        color: var(--paper-brown-600);
+      }
+
+      iron-icon.cyan {
+        color: var(--paper-cyan-600);
+      }
+
+      iron-icon.deep-orange {
+        color: var(--paper-deep-orange-600);
+      }
+
+      iron-icon.deep-purple {
+        color: var(--paper-deep-purple-600);
+      }
+
+      iron-icon.green {
+        color: var(--paper-green-600);
+      }
+
+      iron-icon.grey {
+        color: var(--paper-grey-600);
+      }
+
+      iron-icon.indigo {
+        color: var(--paper-indigo-600);
+      }
+
+      iron-icon.light-blue {
+        color: var(--paper-light-blue-600);
+      }
+
+      iron-icon.light-green {
+        color: var(--paper-light-green-600);
+      }
+
+      iron-icon.lime {
+        color: var(--paper-lime-600);
+      }
+
+      iron-icon.orange {
+        color: var(--paper-orange-600);
+      }
+
+      iron-icon.pink {
+        color: var(--paper-pink-600);
+      }
+
+      iron-icon.purple {
+        color: var(--paper-purple-600);
+      }
+
+      iron-icon.red {
+        color: var(--paper-red-600);
+      }
+
+      iron-icon.teal {
+        color: var(--paper-teal-600);
+      }
+
+      iron-icon.white {
+        color: #fff;
+      }
+
+      iron-icon.yellow {
+        color: var(--paper-yellow-600);
+      }
+
+    </style>
+
+    <paper-button id$="editbtn_[[content]]" contenteditable="true" raised>
+      <template is="dom-if" if="[[fieldIcon]]">
+        <iron-icon icon$="[[fieldIcon]]" class$="editableButtonIcon [[fieldStyleClass]]" on-tap="_handleFieldTap"></iron-icon>
+      </template>
+      <paper-textarea id="textinput" class="editableButtonTextInput" no-label-float value={{displayContent::input}} max-rows="1"></paper-textarea>
+      <iron-icon icon="close" class="editableButtonRemoveButton" on-tap="_handleCloseTap"></iron-icon>
+    </paper-button>
+
+  </template>
+
+  <script>
+    /**
+     * `editable-button`
+     * An editable button
+     */
+    class EditableButton extends Polymer.Element {
+      // constructor
+      constructor() {
+        super();
+      }
+
+      // returns the name of the component
+      static get is() { return 'editable-button'; }
+
+      // defines the component's properties
+      static get properties() {
+        return {
+          buttonID: {
+            type: Number
+          },
+          content: {
+            type: String,
+            reflectToAttribute: true,
+            notify: true,
+            observer: '_handleValueChange'
+          },
+          displayContent: {
+            type: String,
+            reflectToAttribute: true,
+            notify: true
+          },
+          fieldName: {
+            type: String
+          },
+          fieldIcon: {
+            type: String,
+            notify: true,
+          },
+          fieldStyleClass: {
+            type: String,
+            notify: true
+          },
+          remove: {
+            type: Boolean,
+            notify: true
+          },
+          selected: {
+            type: Boolean,
+            notify: true
+          }
+        };
+      }
+
+      // Called before the element is attached to the page
+      ready() {
+        super.ready();
+
+        var textInput = this.$.textinput;
+
+        textInput.addEventListener('tap', () => {
+          this.displayContent = this.content;
+        });
+
+        textInput.addEventListener('keyup', (e) => {
+          if(e.keyCode === 13) {
+            textInput.blur();
+          }
+        });
+
+        textInput.addEventListener('blur', () => {
+          this.content = this.displayContent;
+          this.displayContent = this._getDisplayContent();
+        });
+
+        textInput.addEventListener('keypress', (e) => {
+          if(e.keyCode === 13) {
+            e.preventDefault();
+          }
+        });
+      }
+
+      // get display content, resize and add ellipsis if content larger then 10
+      _getDisplayContent() {
+        return this.content.length > 10 ? this.content.slice(0,10).concat('...') : this.content;
+      }
+
+      // remove the whoe button
+      _handleCloseTap() {
+        this.remove = true;
+      }
+
+      // update border style
+      _updateBorderStyle(style) {
+        this.updateStyles({
+          '--textinput-border': style,
+        });
+      }
+
+      // change selected field
+      _handleFieldTap(e) {
+        if(this.selected === false) {
+          this.selected = true;
+        }
+      }
+    }
+
+    window.customElements.define(EditableButton.is, EditableButton);
+  </script>
+</dom-module>

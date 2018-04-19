@@ -1,0 +1,931 @@
+<script src="/bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+
+<link rel="import" href="/bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="/editable-button.html">
+<link rel="import" href="/search-strategy.html">
+
+<dom-module id="search-box">
+  <template>
+    <style>
+      :host {
+        display: inline-block;
+        width: 100%;
+        margin-left: 20px;
+      }
+
+      #searchBoxHost {
+        display: flex;
+        align-items: center;
+      }
+
+      #searchBox {
+        display: flex;
+        flex-basis: 100%;
+        justify-content: space-around;
+        width: 100%;
+        border: 1px solid grey;
+        border-radius: 5px;
+        align-items: center;
+      }
+
+      #searchInput {
+        display: flex;
+        flex-basis: 0;
+        flex-grow: 1;
+        width: 100%;
+        height: 100%;
+        vertical-align: middle;
+
+        --paper-input-container: {
+          width: 100%;
+        }
+        --paper-input-container-input: {
+          color: white;
+          font-size: 110%;
+        }
+        --paper-input-container-underline: {
+          display: none;
+        };
+        --paper-input-container-underline-focus: {
+          display: none;
+        };
+        --paper-input-container-underline-disabled: {
+          display: none;
+        };
+      }
+
+      #searchInput iron-icon {
+        display: inline-flex;
+        height: 100%;
+        margin: 0 5px;
+      }
+
+      paper-dialog {
+        width: 100%;
+        height: 100%;
+      }
+      
+      #searchEditableButtons {
+        display: flex;
+        flex-basis: auto;
+        /* width: 70%; */
+        /* flex-grow: 1; */
+        max-width: 70%;
+        flex-wrap: wrap;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+      }
+
+      .editableButtons {
+        display: inline-flex;
+      }
+
+      #searchButton, #searchClearButton {
+        display: flex;
+        flex-basis: auto;
+        height: 100%;
+        padding: 0px;
+        margin: 0px 5px;
+        /* background: white;
+        color: black; */
+      }
+
+      paper-textarea {
+        min-height: 10px;
+      }
+
+    </style>
+
+    <div id="searchBoxHost">
+      <div id="searchBox">
+        <paper-input
+          id="searchInput"
+          no-label-float
+          value={{inputContent::input}}
+          placeholder="Enter Search">
+          <iron-icon icon="search" slot="prefix" />
+        </paper-input>
+        <div id="searchEditableButtons">
+          <template is="dom-repeat" items="{{editableButtonItems}}" as="item">
+            <editable-button 
+              id$="editableButton_[[item.id]]"
+              class="editableButtons"
+              field-icon="[[item.fieldIcon]]"
+              field-name="[[item.fieldName]]"
+              field-style-class="[[item.fieldStyle]]"
+              content="{{item.content}}"
+              remove="[[item.remove]]"
+              display-content="{{item.displayContent}}"
+              selected="{{item.selected}}"
+              on-content-changed="handleEditableButtonContentChange"
+              on-remove-changed="handleEditableButtonRemove"
+              on-selected-changed="handleEditableButtonFieldChange">
+            </editable-button>
+          </template>
+        </div>
+      </div>
+      <paper-icon-button 
+        id="searchButton"
+        icon="search" 
+        on-tap="onTapSearchButton" 
+        title="Search">
+      </paper-icon-button>
+      <paper-icon-button
+        id="searchClearButton"
+        icon="clear"
+        on-tap="onTapClearSearchButton"
+        title="Clear All Search Terms">
+      </paper-icon-button>
+    </div>
+
+    <div id="searchStrategyHost">
+      <template is="dom-if" if="[[showSearchStrategy]]">
+        <search-strategy 
+          free-text-search-fields="[[freeTextSearchFields]]" 
+          selected-field="{{selectedField}}">
+        </search-strategy>
+      </template>
+    </div>
+  </template>
+
+  <script>
+    class searchBox extends Polymer.Element {
+      // returns the name of the component
+      static get is() {
+        return 'search-box';
+      }
+
+      // defines the component's properties
+      static get properties() {
+        return {
+          dataIconProperty: {
+            type: String,
+            value: 'icon'
+          },
+          dataKeyProperty: {
+            type: String,
+            value: 'key'
+          },
+          dataProperty: {
+            type: String,
+            value: 'data'
+          },
+          dataStyleClassProperty: {
+            type: String,
+            value: 'styleClass'
+          },
+          dataTitleProperty: {
+            type: String,
+            value: 'title'
+          },
+          dateConfig: {
+            type: Object,
+            value: function() {
+              return {};
+            }
+          },
+          editableButtonItems: {
+            type: Array,
+            notify: true
+          },
+          freeTextSearchFields: {
+            type: Array
+          },
+          inputContent: {
+            type: String,
+            observer: 'inputContentObserver'
+          },
+          nameProperty: {
+            type: String,
+            value: 'name',
+          },
+          networkExpansionParameters: {
+            type: Object,
+            notify: true
+          },
+          processRequest: {
+            type: Boolean,
+            value: false,
+            notify: true
+          },
+          searchFields: {
+            type: Array,
+            computed: 'createSearchFields(searchFieldsConfig, dataProperty, nameProperty, typeProperty, dataIconProperty, dataKeyProperty, dataStyleClassProperty, dataTitleProperty)'
+          },
+          searchFieldsConfig: {
+            type: Array
+          },
+          searchParameters: {
+            type: Object,
+            notify: true,
+            reflectToAttribute: true
+          },
+          selectedEditableButton: {
+            type: Object,
+            value: null
+          },
+          selectedField: {
+            type: String,
+            notify: true,
+            value: null
+          },
+          showSearchStrategy: {
+            type: Boolean,
+            value: false
+          },
+          timeoutReference: {
+            type: Number
+          },
+          typeProperty: {
+            type: String,
+            value: 'type',
+          }
+        };
+      }
+
+      // observers
+      static get observers() {
+        return [
+          'searchParametersObserver(searchParameters.*)',
+          'selectedFieldObserver(selectedField)',
+          'searchFieldsObserver(searchFields.*)'
+        ];
+      }
+
+      searchFieldsObserver() {
+        console.log('********serachFields********',this.searchFields);
+      }
+
+      ready() {
+        super.ready();
+        // handle input content press enter
+        this.$.searchInput.addEventListener('keypress', e => {
+          if(e.keyCode === 13) {
+            // if there is input content
+            if(this.inputContent.length !== 0) {
+              // update search fields first
+              this.updateSearchFieldsFromInputContent(this.selectedField, this.inputContent);
+              // handle search
+              this.handleSearch();
+            } else {
+              this.handleSearch();
+            }
+          }
+        });
+      }
+
+      // tap search button
+      onTapSearchButton() {
+        // if there is input contents
+        if(this.inputContent.length !== 0) {
+          // update search fields first
+          this.updateSearchFieldsFromInputContent(this.selectedField, this.inputContent);
+          // handle search
+          this.handleSearch();
+        } else {
+          this.handleSearch();
+        }
+      }
+
+      // tap clear button
+      onTapClearSearchButton() {
+        this.removeAllSearchTerms();
+        this.handleSearch();
+      }
+
+      // initialize serach fields
+      createSearchFields(config, dataProperty, nameProperty, typeProperty, dataIconProperty, dataKeyProperty, dataStyleClassProperty, dataTitleProperty) {
+        var freeTextSearchFieldsKey = this.freeTextSearchFields.map(val => {return val.key;});
+        return (config || []).map(dialogConfig => {
+          var isDate = dialogConfig[typeProperty] === 'date';
+          var isImage = dialogConfig[typeProperty] === 'image';
+          return {
+            data: dialogConfig[dataProperty].map(searchConfig => {
+              var item = {
+                icon: searchConfig[dataIconProperty],
+                key: searchConfig[dataKeyProperty],
+                styleClass: searchConfig[dataStyleClassProperty],
+                title: searchConfig[dataTitleProperty],
+                freeText: freeTextSearchFieldsKey.includes(searchConfig[dataKeyProperty])
+              };
+
+              if(!isImage) {
+                // item.value = isDate ? {} : '';
+                item.value = isDate ? {} : [];
+              }
+
+              if(!isImage && !isDate) {
+                item.activateNetworkExpansion = false;
+                item.activateNetworkExpansionPrevious = false;
+                item.enableNetworkExpansion = (searchConfig.enableNetworkExpansion || false);
+                item.requireOne = true;
+                item.requireOnePrevious = true;
+              }
+
+              if(isImage) {
+                item.excluded = [];
+                item.images = [];
+                item.required = [];
+                item.selected = [];
+                item.union = [];
+              }
+
+              return item;
+            }),
+            isDate: isDate,
+            isImage: isImage,
+            name: dialogConfig[nameProperty]
+          };
+        });
+      }
+
+      // clear input content
+      clearInputContent() {
+        this.inputContent = '';
+      }
+
+      // show search strategy
+      openSearchStrategy() {
+        this.timeoutReference = false;
+        if(!this.showSearchStrategy && this.freeTextSearchFields.length !== 0) {
+          this.showSearchStrategy = true;
+        }
+      }
+
+      // close search strategy
+      closeSearchStrategy() {
+        if(this.timeoutReference) {
+          Polymer.Async.timeOut.cancel(this.timeoutReference);
+        }
+        this.showSearchStrategy = false;
+        this.selectedField = null;
+      }
+
+      // handleSearch
+      handleSearch() {
+        // update search fields
+        this.updateSearchParametersFromFields(this.searchParameters);
+
+        // update editableButtonItems
+        this.updateEditableButtonItems(this.searchParameters);
+
+        // clear and close
+        this.clearInputContent();
+        this.closeSearchStrategy();
+
+        // notify searchParameters change
+        this.notifyPath('searchParameters.*', this.searchParameters);
+
+        if(this.areSearchParametersDisabled(this.searchParameters)) {
+          this.removeAllSearchTerms();
+          return;
+        }
+      }
+
+      handleSearchWithoutUpdateSearchParameters() {
+        // update editableButtonItems
+        // this.updateEditableButtonItems(this.searchParameters);
+
+        // clear and close
+        this.clearInputContent();
+        this.closeSearchStrategy();
+      }
+
+      // select the field in the search strategy
+      selectedFieldObserver() {
+        if(this.freeTextSearchFields.length != 0 && this.showSearchStrategy && this.selectedField != null && this.inputContent.length != 0) {
+          // update search fields first
+          this.updateSearchFieldsFromInputContent(this.selectedField, this.inputContent);
+          // handle search
+          this.handleSearch();
+        } else if(this.freeTextSearchFields.length != 0 && this.showSearchStrategy && this.selectedField != null && this.selectedEditableButton != null) {
+          // update search fields from new field
+          this.updateSearchFieldsFromNewEditableButtonField(this.selectedField.fieldTitle, this.selectedEditableButton.fieldName, this.selectedEditableButton.content);
+          // handle search
+          this.handleSearch();
+          // reset selected editable button
+          this.selectedEditableButton = null;
+        }
+      }
+
+      // handle change on editable button field
+      handleEditableButtonFieldChange(e) {
+        // show search strategy
+        this.openSearchStrategy();
+        // change selected editable button
+        this.selectedEditableButton = e.model.item;
+      }
+
+      // handle change on editable button content
+      handleEditableButtonContentChange(e) {
+        let field = e.model.item.fieldName;
+        let oldContent = e.model.item.content;
+        let newContent = e.detail.value;
+        if(oldContent !== newContent && newContent.length !== 0) {
+          this.updateSearchFieldsFromNewEditableButtonContent(field, newContent, oldContent);
+          this.handleSearch();
+        } else if(newContent.length === 0) {
+          this.updateSearchFieldsFromRemoveEditableButton(field, oldContent, e.model.date, e.model.id);
+          this.handleSearch();
+        }
+      }
+
+      // handle remove of editable button
+      handleEditableButtonRemove(e) {
+        let item = e.model.item;
+        if(e.detail.value === true) {
+          // update search field
+          this.updateSearchFieldsFromRemoveEditableButton(item.fieldName, item.content, item.date, item.id);
+          // handle search
+          this.handleSearch();
+        }
+      }
+
+      // update search fields from input content
+      // enter / search button / select search strategy
+      updateSearchFieldsFromInputContent(selectedField, content) {
+        var self;
+        var fieldTitle = 'Description';
+        if(selectedField !== null) {
+          fieldTitle = selectedField.fieldTitle;
+        } 
+        // else {
+        //   fieldTitle = this._getContentField(content)
+        // }
+        this.searchFields.forEach(function(dialogConfig) {
+          dialogConfig.data.forEach(function(searchConfig) {
+            searchConfig.activateNetworkExpansionPrevious = searchConfig.activateNetworkExpansion;
+            searchConfig.requireOnePrevious = searchConfig.requireOne;
+            if(searchConfig.title === fieldTitle) {
+              // add the content into field value
+              searchConfig.value.push(content);
+            }
+          });
+        });
+      }
+
+      _getContentField(content) {
+        // phone
+        /* (123) 456-7890
+           (123)456-7890
+            123-456-7890
+            123.456.7890
+            1234567890
+            +1234567890 */
+        console.log(this._unformatPhones(content));
+        var fields = []
+        this.searchFields.map((dialogConfig) => {
+          dialogConfig.data.map((searchConfig) => {
+            console.log(searchConfig.key);
+            fields.push(searchConfig.key);
+          });
+        });
+        console.log(fields);
+        console.log(fields.includes('email'));
+        console.log(fields.includes('email'));
+        var re_phone = RegExp(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im);
+        if(re_phone.test(content) && fields.includes('phone')) {
+          console.log('phone', content);
+          return 'Phone';
+        }
+        // email
+        var re_email = RegExp(/^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i);
+        if(re_email.test(content) && fields.includes('email')) {
+          console.log('emial', content);
+          console.log(this.searchFields);
+          return 'Email';
+        }
+        // date
+        var re_date = RegExp(/^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/);
+        if(re_date.test(content)) {
+          console.log('date', content);
+          // return ''
+        }
+        // default
+        return 'Description';
+      }
+
+      // update search fields from EditableButton Field change
+      updateSearchFieldsFromNewEditableButtonField(newField, oldField, content) {
+        this.searchFields.forEach(function(dialogConfig) {
+          dialogConfig.data.forEach(function(searchConfig) {
+            searchConfig.activateNetworkExpansionPrevious = searchConfig.activateNetworkExpansion;
+            searchConfig.requireOnePrevious = searchConfig.requireOne;
+            if(searchConfig.title === newField) {
+              // add the content into new field value
+              searchConfig.value.push(content);
+            } else if(searchConfig.key === oldField) {
+              // remove the content from old field
+              searchConfig.value = searchConfig.value.filter(val => val !== content);
+            }
+          });
+        });
+      }
+
+      // update search fields from EditableButton Field change
+      updateSearchFieldsFromNewEditableButtonContent(field, newContent, oldContent) {
+        this.searchFields.forEach(function(dialogConfig) {
+          dialogConfig.data.forEach(function(searchConfig) {
+            searchConfig.activateNetworkExpansionPrevious = searchConfig.activateNetworkExpansion;
+            searchConfig.requireOnePrevious = searchConfig.requireOne;
+            if(searchConfig.key === field) {
+              // replace the old content with new content
+              searchConfig.value = searchConfig.value.map(val => {
+                return val === oldContent ? newContent : val;
+              });
+            }
+          });
+        });
+      }
+
+      // update search fields when remove editable button
+      // or the content length is 0
+      updateSearchFieldsFromRemoveEditableButton(field, content, date, id) {
+        this.searchFields.forEach(function(dialogConfig) {
+          dialogConfig.data.forEach(function(searchConfig) {
+            searchConfig.activateNetworkExpansionPrevious = searchConfig.activateNetworkExpansion;
+            searchConfig.requireOnePrevious = searchConfig.requireOne;
+            if(date !== undefined) {
+              if(content.indexOf('+') === 0 || content.indexOf('-') === 0 || content.indexOf('<') === 0 || content.indexOf('>') === 0) {
+                content = content.substring(1);
+              }
+              if(searchConfig.key === id) {
+                if(Object.entries(searchConfig.value)[0][1].text === content) {
+                  searchConfig.value[id].enabled = false;
+                }
+              }
+            } else {
+              if(searchConfig.key === field) {
+                // remove the old content
+                searchConfig.value = searchConfig.value.filter(val => {
+                  return val !== content;
+                });
+              }
+            }
+          });
+        });
+        // this.notifyPath(['searchParameters'], this.searchParameters);
+      }
+
+      updateSearchParametersFromFields() {
+        var self = this;
+        this.processRequest = false;
+        if(this.searchFields) {
+          this.searchFields.forEach((dialogConfig) => {
+            if(dialogConfig.data) {
+              dialogConfig.data.forEach((searchConfig) => {
+                if(dialogConfig.isDate) {
+                  self.updateDateParameterFromField(searchConfig);
+                } else if(dialogConfig.isImage) {
+                  // self.updateImageParameterFromGallery(searchConfig);
+                } else {
+                  self.updateSearchParameterFromField(searchConfig);
+                }
+              });
+            }
+          });
+        }
+        this.processRequest = true;
+      }
+
+      updateDateParameterFromField(searchConfig) {
+        var parameterKey = this.dateConfig[searchConfig.key];
+        // TODO Don't assume data structure.
+        if(!_.isEmpty(searchConfig.value[searchConfig.key])) {
+          var dateObject = searchConfig.value[searchConfig.key];
+          this._updateDateParameterAndNotify(dateObject.key, dateObject.date, dateObject.text, dateObject.category, dateObject.enabled);
+        } else if(this.searchParameters[parameterKey][searchConfig.key]) {
+          this.searchParameters[parameterKey][searchConfig.key] = {};
+          this.notifyPath(['searchParameters', parameterKey, searchConfig.key], {});
+        }
+      }
+
+      _updateDateParameterAndNotify(key, date, text, category, enabled) {
+        var parameterKey = this.dateConfig[key];
+        this.searchParameters[parameterKey][key] = this._buildSearchParameter(category, enabled, key, text, 'required', date);
+        this.notifyPath(['searchParameters', parameterKey, key], this.searchParameters[parameterKey][key]);
+      }
+
+      updateSearchParameterFromField(searchConfig) {
+        var self = this;
+
+        let field = searchConfig.key;
+        // var searchConfigValues = this.getSearchConfigValue(field, searchConfig.value, this.searchParameters[field]);
+        // var searchTermToSearchStatus = searchConfigValues.map
+        // var searchTermToSearchStatus = searchConfig.value.split(',').map
+        var searchTermToSearchStatus = searchConfig.value.map(term => {
+          return term.trim();
+        }).reduce((searchTermToSearchStatus, term) => {
+          var search = searchConfig.requireOne ? 'union' : 'optional';
+          var key = term;
+
+          // A prefixed term overrides searchConfig.requireOne.
+          if(key.indexOf('+') === 0) {
+            search = 'required';
+            key = key.substring(1);
+          }
+
+          if(key.indexOf('-') === 0) {
+            search = 'excluded';
+            key = key.substring(1);
+          }
+
+          if(key.indexOf('<') === 0) {
+            search = 'lessthan';
+            key = key.substring(1);
+          }
+
+          if(key.indexOf('>') === 0) {
+            earch = 'morethan';
+            key = key.substring(1);
+          }
+
+          // TODO Move custom formatting.
+          if(searchConfig.key === 'phone') {
+            key = self._unformatPhones(key);
+          }
+
+          if(key) {
+            searchTermToSearchStatus[key] = search;
+          }
+
+          return searchTermToSearchStatus;
+        }, {});
+
+        this.updateSearchParameterTerms(searchConfig, searchTermToSearchStatus);
+
+        var activateNetworkExpansion = !!(this._isNetworkExpansionViable && searchConfig.activateNetworkExpansion);
+
+        if(this.networkExpansionParameters[searchConfig.key] !== activateNetworkExpansion) {
+          this.networkExpansionParameters[searchConfig.key] = activateNetworkExpansion;
+          this.notifyPath(['networkExpansionParameters', searchConfig.key], this.networkExpansionParameters[searchConfig.key]);
+        }
+      }
+
+      updateSearchParameterTerms(searchConfig, searchTermToSearchStatus) {
+
+        var self = this;
+
+        _.keys(self.searchParameters[searchConfig.key]).forEach(function(term) {
+          // Disable deleted terms.
+          if(self.searchParameters[searchConfig.key][term].enabled && _.keys(searchTermToSearchStatus).indexOf(term) < 0) {
+            self.searchParameters[searchConfig.key][term] = self._buildSearchParameter(searchConfig.title, false, term, term);
+          }
+        });
+
+        _.keys(searchTermToSearchStatus).forEach(function(term) {
+          // Add new terms.
+          if(term) {
+            self.searchParameters[searchConfig.key][term] = self._buildSearchParameter(searchConfig.title, true, term, term, searchTermToSearchStatus[term]);
+          }
+        });
+        // this.notifyPath(['searchParameters', searchConfig.key], this.searchParameters[searchConfig.key]);
+      }
+
+      // not used
+      getSearchConfigValue(field, fieldValues, searchParameter) {
+        // inputnewcontent -> searchparameter do not contain
+        // inputnewcontenthascomma -> searchparameter only have old items
+        // inputnewcontent -> searchparamter has comma, remove what in search parameter
+        let values = [];
+        if(fieldValues.length !== 0) {
+          fieldValues = fieldValues.concat(',');
+          Object.keys(searchParameter).forEach(function(key) {
+            if(fieldValues.includes(key.concat(','))) {
+              fieldValues = fieldValues.replace(key.concat(','), '');
+              values.push(key);
+            }
+          });
+          if(fieldValues.length !== 0) {
+            values.push(fieldValues.slice(0, -1));
+          }
+        }
+        return values;
+      }
+
+      _buildSearchParameter(category, enabled, key, text, search, date) {
+        return {
+          category: category,
+          date: date,
+          enabled: enabled,
+          key: key,
+          search: search,
+          text: text
+        };
+      }
+
+      areSearchParametersDisabled(searchParameters) {
+        return _.keys(searchParameters).every(function(type) {
+          if(_.isEmpty(searchParameters[type])) {
+            return true;
+          }
+          return _.keys(searchParameters[type]).every(function(term) {
+            return !searchParameters[type][term].enabled;
+          });
+        });
+      }
+
+      inputContentObserver() {
+        let self = this;
+        if(this.timeoutReference) {
+          Polymer.Async.timeOut.cancel(this.timeoutReference);
+        }
+        this.timeoutReference = Polymer.Async.timeOut.run(() => self.openSearchStrategy(), 1500);
+      }
+
+      searchParametersObserver() {
+        this.updateEditableButtonItems(this.searchParameters);
+        var self = this;
+        if(this.searchFields) {
+          this.searchFields.forEach(function(dialogConfig, dialogIndex) {
+            if(dialogConfig.data) {
+              dialogConfig.data.forEach(function(searchConfig, searchIndex) {
+                if(dialogConfig.isDate) {
+                  self.updateDateFieldFromParameter(searchConfig, ['searchFields', dialogIndex, 'data', searchIndex]);
+                } else if(dialogConfig.isImage) {
+                  // self.updateImageGalleryFromParameter(searchConfig, ['searchFields', dialogIndex, 'data', searchIndex]);
+                } else {
+                  self.updateSearchFieldFromParameter(searchConfig, ['searchFields', dialogIndex, 'data', searchIndex]);
+                }
+              });
+            }
+          });
+          this.handleSearchWithoutUpdateSearchParameters();
+        }
+      }
+
+      updateDateFieldFromParameter(searchConfig, updatePath) {
+        var parameterKey = this.dateConfig[searchConfig.key];
+        searchConfig.value = {};
+        if(this.searchParameters[parameterKey][searchConfig.key]) {
+          searchConfig.value[searchConfig.key] = this.searchParameters[parameterKey][searchConfig.key];
+        }
+        this.notifyPath(updatePath.concat('value'), searchConfig.value);
+      }
+
+      updateImageGalleryFromParameter() {
+      }
+
+      updateSearchFieldFromParameter(searchConfig, updatePath) {
+        var self = this;
+        var termData = _.keys(this.searchParameters[searchConfig.key]).filter(function(term) {
+          return self.getSearchParameterData(self.searchParameters[searchConfig.key][term]).enabled;
+        }).map(function(term) {
+          return self.getSearchParameterData(self.searchParameters[searchConfig.key][term]);
+        });
+
+        searchConfig.value = termData.map(function(data) {
+          if(data.search === 'required') {
+            return '+' + data.text;
+          }
+          if(data.search === 'excluded') {
+            return '-' + data.text;
+          }
+          if(data.search === 'lessthan') {
+            return '<' + data.text;
+          }
+          if(data.search === 'morethan') {
+            return '>' + data.text;
+          }
+          return data.text;
+        });
+        // searchConfig.value = termData.map(function(data) {
+        //   if(data.search === 'required') {
+        //     return '+' + data.text;
+        //   }
+        //   if(data.search === 'excluded') {
+        //     return '-' + data.text;
+        //   }
+        //   if(data.search === 'lessthan') {
+        //     return '<' + data.text;
+        //   }
+        //   if(data.search === 'morethan') {
+        //     return '>' + data.text;
+        //   }
+        //   return data.text;
+        // }).join(', ');
+        // this.$$('#input_' + searchConfig.key).value = searchConfig.value;
+
+        searchConfig.activateNetworkExpansion = this.networkExpansionParameters[searchConfig.key] || searchConfig.activateNetworkExpansion;
+        this.notifyPath(updatePath.concat(['activateNetworkExpansion']), searchConfig.activateNetworkExpansion);
+
+        searchConfig.requireOne = !termData.length ? searchConfig.requireOne : termData.some(function(data) {
+          return data.search === 'union';
+        });
+        this.notifyPath(updatePath.concat(['requireOne']), searchConfig.requireOne);
+      }
+
+      removeAllSearchTerms() {
+        this._uploadedFiles = [];
+        if(this.searchFields) {
+          var self = this;
+          this.searchFields.forEach(function(dialogConfig, dialogIndex) {
+            if(dialogConfig.data) {
+              dialogConfig.data.forEach(function(searchConfig, searchIndex) {
+                if(dialogConfig.isDate) {
+                  self.set(['searchFields', dialogIndex, 'data', searchIndex, 'value'], {});
+                  self.set('searchConfig.activateNetworkExpansion', false);
+                } else if(dialogConfig.isImage) {
+                  self.set(['searchFields', dialogIndex, 'data', searchIndex, 'selected'], []);
+                } else {
+                  // self.$$('#editableButton_' + searchConfig.key).value = '';
+                  // self.set(['searchFields', dialogIndex, 'data', searchIndex, 'value'], '');
+                  self.set(['searchFields', dialogIndex, 'data', searchIndex, 'value'], []);
+                  self.set(['searchFields', dialogIndex, 'data', searchIndex, 'requireOne'], true);
+                  if(searchConfig.enableNetworkExpansion) {
+                    self.set(['searchFields', dialogIndex, 'data', searchIndex, 'activateNetworkExpansion'], false);
+                  }
+                }
+              });
+            }
+          });
+        }
+      }
+
+      updateEditableButtonItems(searchParameters) {
+        var self = this;
+        var items = [];
+        Object.entries(searchParameters).map(entry => {
+          var key = entry[0];
+          var value = Object.values(entry[1]);
+          if(value.length !== 0) {
+            value.map(v => {
+              if(v.enabled) {
+                let field = self.getField(key);
+                let contentText = v.text;
+                if(v.search === 'required') {
+                  contentText = '+' + v.text;
+                }
+                if(v.search === 'excluded') {
+                  contentText = '-' + v.text;
+                }
+                if(v.search === 'lessthan') {
+                  contentText = '<' + v.text;
+                }
+                if(v.search === 'morethan') {
+                  contentText = '>' + v.text;
+                }
+                items.push({
+                  id: v.key,
+                  fieldIcon: field.icon,
+                  fieldStyle: field.styleClass,
+                  fieldName: key,
+                  content: contentText,
+                  date: v.date,
+                  remove: false,
+                  search: v.search,
+                  selected: false,
+                  displayContent: self.getDisplayContent(contentText)
+                });
+              }
+            });
+          }
+        });
+        this.editableButtonItems = items;
+      }
+
+      getField(fieldKey) {
+        let fieldIcon = {};
+        this.searchFields.forEach((dialogConfig) => {
+          if(dialogConfig.data) {
+            dialogConfig.data.forEach((searchConfig) => {
+              if(!dialogConfig.isDate && !dialogConfig.isImage) {
+                if(searchConfig.key === fieldKey) {
+                  fieldIcon.icon = searchConfig.icon;
+                  fieldIcon.styleClass = searchConfig.styleClass;
+                }
+              }
+            });
+          }
+        });
+        return fieldIcon;
+      }
+
+      getDisplayContent(content) {
+        return content.length > 10 ? content.slice(0,10).concat('...') : content;
+      }
+
+      getSearchParameterData(searchParameter) {
+        return {
+          enabled: searchParameter.enabled,
+          search: searchParameter.search,
+          text: searchParameter.text
+        };
+      }
+
+      _unformatPhones(phone) {
+        // Replace all delimiters (whitespace, commas, and, semicolons) with single spaces.
+        return phone.replace(/[\s,;]/g, ' ')
+          // Remove all non-digit, non-whitespace characters.
+          .replace(/[^\d\s]/g, '')
+          // Remove extra spaces.
+          // .replace(/\s+/g, '\n')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+    }
+
+    window.customElements.define(searchBox.is, searchBox);
+  </script>
+</dom-module>

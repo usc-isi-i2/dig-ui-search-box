@@ -1,0 +1,172 @@
+<link rel="import" href="/bower_components/polymer/polymer-element.html">
+
+<!-- define the component in polymer -->
+<dom-module id="search-strategy">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        margin: 5px 0;
+      }
+
+      #search_strategy span{
+        text-transform: capitalize;
+      }
+
+      .category_item {
+        cursor: pointer;
+        margin: 5px;
+      }
+
+      .category_item:hover {
+        text-decoration: underline;
+      }
+
+      iron-icon {
+        height: 1em;
+      }
+
+      iron-icon.amber {
+        color: var(--paper-amber-600);
+      }
+
+      iron-icon.black {
+        color: #111;
+      }
+
+      iron-icon.blue {
+        color: var(--paper-blue-600);
+      }
+
+      iron-icon.blue-grey {
+        color: var(--paper-blue-grey-600);
+      }
+
+      iron-icon.brown {
+        color: var(--paper-brown-600);
+      }
+
+      iron-icon.cyan {
+        color: var(--paper-cyan-600);
+      }
+
+      iron-icon.deep-orange {
+        color: var(--paper-deep-orange-600);
+      }
+
+      iron-icon.deep-purple {
+        color: var(--paper-deep-purple-600);
+      }
+
+      iron-icon.green {
+        color: var(--paper-green-600);
+      }
+
+      iron-icon.grey {
+        color: var(--paper-grey-600);
+      }
+
+      iron-icon.indigo {
+        color: var(--paper-indigo-600);
+      }
+
+      iron-icon.light-blue {
+        color: var(--paper-light-blue-600);
+      }
+
+      iron-icon.light-green {
+        color: var(--paper-light-green-600);
+      }
+
+      iron-icon.lime {
+        color: var(--paper-lime-600);
+      }
+
+      iron-icon.orange {
+        color: var(--paper-orange-600);
+      }
+
+      iron-icon.pink {
+        color: var(--paper-pink-600);
+      }
+
+      iron-icon.purple {
+        color: var(--paper-purple-600);
+      }
+
+      iron-icon.red {
+        color: var(--paper-red-600);
+      }
+
+      iron-icon.teal {
+        color: var(--paper-teal-600);
+      }
+
+      iron-icon.white {
+        color: #fff;
+      }
+
+      iron-icon.yellow {
+        color: var(--paper-yellow-600);
+      }
+    </style>
+
+    <div id="search_strategy">
+      <template is="dom-repeat" id="categoryList" items="{{categories}}">
+        <span id$="category_[[item]]" class="category_item" on-click="_selection">
+          <iron-icon class$=[[item.fieldStyle]] icon$="[[item.fieldIcon]]"></iron-icon>
+          {{item.fieldTitle}}
+        </span>
+      </template>
+      <array-selector id="selector" items="{{categories}}" selected="{{selectedField}}" toggle></array-selector>
+    </div>
+  </template>
+
+  <script>
+    class SearchStrategy extends Polymer.Element {
+      // constructor
+      constructor() {
+        super();
+      }
+
+      // returns the name of the component
+      static get is() { return 'search-strategy'; }
+
+      // defines the component's properties
+      static get properties() {
+        return {
+          freeTextSearchFields: {
+            type: Array
+          },
+          selectedField: {
+            type: String,
+            notify: true,
+            reflectToAttribute: true,
+          },
+          categories: {
+            type: Array,
+            computed: '_generateCategories()',
+          },
+        };
+      }
+
+      // set selected field
+      _selection(e) {
+        this.$.selector.select(e.model.item);
+      }
+
+      // generate all free text search fields
+      _generateCategories() {
+        return this.freeTextSearchFields.map(function(val) {
+          return {
+            fieldTitle: val.title,
+            fieldIcon: val.icon,
+            fieldStyle: val.color
+          };
+        });
+      }
+    }
+
+    window.customElements.define(SearchStrategy.is, SearchStrategy);
+  </script>
+</dom-module>
