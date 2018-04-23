@@ -38,11 +38,16 @@
         vertical-align: middle;
 
         --paper-input-container: {
+          /* Make the height of the input element equal 30px. */
+          padding: 4px 0 2px;
           width: 100%;
         }
         --paper-input-container-input: {
           color: white;
-          font-size: 110%;
+          display: block;
+          font-size: 18px;
+          height: 20px;
+          line-height: 20px;
         }
         --paper-input-container-underline: {
           display: none;
@@ -56,8 +61,11 @@
       }
 
       #searchInput iron-icon {
-        display: inline-flex;
-        height: 100%;
+        display: block;
+        height: 20px;
+        width: 20px;
+        min-height: 20px;
+        min-width: 20px;
         margin: 0 5px;
       }
 
@@ -69,8 +77,6 @@
       #searchEditableButtons {
         display: flex;
         flex-basis: auto;
-        /* width: 70%; */
-        /* flex-grow: 1; */
         max-width: 70%;
         flex-wrap: wrap;
         flex-direction: row-reverse;
@@ -84,17 +90,25 @@
       #searchButton, #searchClearButton {
         display: flex;
         flex-basis: auto;
-        height: 100%;
+        height: 30px;
+        width: 30px;
+        min-height: 30px;
+        min-width: 30px;
         padding: 0px;
         margin: 0px 5px;
-        /* background: white;
-        color: black; */
+      }
+
+      #searchButton:hover, #searchClearButton:hover {
+        color: greenyellow;
       }
 
       paper-textarea {
         min-height: 10px;
       }
 
+      search-strategy {
+        margin-top: 4px;
+      }
     </style>
 
     <div id="searchBoxHost">
@@ -103,7 +117,7 @@
           id="searchInput"
           no-label-float
           value={{inputContent::input}}
-          placeholder="Enter Search">
+          placeholder="Enter Search Keywords">
           <iron-icon icon="search" slot="prefix" />
         </paper-input>
         <div id="searchEditableButtons">
@@ -248,13 +262,8 @@
       static get observers() {
         return [
           'searchParametersObserver(searchParameters.*)',
-          'selectedFieldObserver(selectedField)',
-          'searchFieldsObserver(searchFields.*)'
+          'selectedFieldObserver(selectedField)'
         ];
-      }
-
-      searchFieldsObserver() {
-        console.log('********serachFields********',this.searchFields);
       }
 
       ready() {
@@ -473,33 +482,24 @@
             123.456.7890
             1234567890
             +1234567890 */
-        console.log(this._unformatPhones(content));
         var fields = []
         this.searchFields.map((dialogConfig) => {
           dialogConfig.data.map((searchConfig) => {
-            console.log(searchConfig.key);
             fields.push(searchConfig.key);
           });
         });
-        console.log(fields);
-        console.log(fields.includes('email'));
-        console.log(fields.includes('email'));
         var re_phone = RegExp(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im);
         if(re_phone.test(content) && fields.includes('phone')) {
-          console.log('phone', content);
           return 'Phone';
         }
         // email
         var re_email = RegExp(/^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i);
         if(re_email.test(content) && fields.includes('email')) {
-          console.log('emial', content);
-          console.log(this.searchFields);
           return 'Email';
         }
         // date
         var re_date = RegExp(/^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/);
         if(re_date.test(content)) {
-          console.log('date', content);
           // return ''
         }
         // default

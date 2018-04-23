@@ -4,24 +4,36 @@
     <style>
       :host {
         display: flex;
-        margin: 5px 0;
       }
 
-      #search_strategy span{
+      #search_strategy {
+        font-size: 14px;
+        height: 16px;
+        line-height: 16px;
+      }
+
+      .category_item span {
+        display: inline-block;
         text-transform: capitalize;
       }
 
       .category_item {
         cursor: pointer;
-        margin: 5px;
+        display: inline-block;
+        margin-right: 5px;
       }
 
-      .category_item:hover {
+      .category_item:hover span {
         text-decoration: underline;
       }
 
       iron-icon {
-        height: 1em;
+        float: left;
+        height: 16px;
+        width: 16px;
+        min-height: 16px;
+        min-width: 16px;
+        margin-right: 5px;
       }
 
       iron-icon.amber {
@@ -110,10 +122,11 @@
     </style>
 
     <div id="search_strategy">
+      <em class="suggestions">Suggestions</em>
       <template is="dom-repeat" id="categoryList" items="{{categories}}">
         <span id$="category_[[item]]" class="category_item" on-click="_selection">
           <iron-icon class$=[[item.fieldStyle]] icon$="[[item.fieldIcon]]"></iron-icon>
-          {{item.fieldTitle}}
+          <span>{{item.fieldTitle}}</span>
         </span>
       </template>
       <array-selector id="selector" items="{{categories}}" selected="{{selectedField}}" toggle></array-selector>
