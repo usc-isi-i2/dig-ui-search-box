@@ -3,30 +3,28 @@
   <template>
     <style>
       :host {
-        vertical-align: middle;
-        margin: 3px 0;
+        display: inline-flex;
       }
 
       .editableButtonIcon, .editableButtonRemoveButton {
         display: inline-flex;
-        vertical-align: middle;
         --paper-button: {
           background: white;
-          color: black;
+          color: var(--primary-text-color, #111);
         }
-        --iron-icon-height: 1em;
-        --iron-icon-width: 1em;
+        --iron-icon-height: 16px;
+        --iron-icon-width: 16px;
       }
 
       paper-button {
         display: inline-flex;
-        /* font-size: 100%; */
-        /* vertical-align: middle; */
-        height: 1.8em;
+        height: 20px;
+        margin: 0 5px 0 0;
         min-width: 0;
+        padding: 0 5px;
         --paper-button: {
           background: white;
-          color: black;
+          color: var(--primary-text-color, #111);
         };
       }
 
@@ -36,6 +34,13 @@
       }
 
       paper-textarea {
+        --paper-input-container: {
+          display: flex;
+          height: 20px;
+          line-height: 20px;
+          margin-left: 5px;
+          padding: 0;
+        };
         --paper-input-container-underline: {
           display: none;
         };
@@ -49,17 +54,18 @@
           border: 1px solid gray;
         };
         --paper-input-container-input: {
-          color: black;
+          color: var(--primary-text-color, #111);
+          display: block;
+          height: 16px;
+          line-height: 16px;
+          padding: 0;
         };
         --iron-autogrow-textarea: {
-          display: inline-block;
-          vertical-align: middle;
-          line-height: 100%;
-          font-size: 100%;
-          width: 100%;
-          height: 100%;
+          display: block;
+          font-size: 14px;
+          height: 16px;
+          line-height: 16px;
           white-space: nowrap;
-          text-transform: lowercase;
         };
       }
 
