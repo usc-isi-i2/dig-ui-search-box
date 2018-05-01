@@ -1,9 +1,25 @@
 <script src="../webcomponentsjs/webcomponents-loader.js"></script>
-
 <link rel="import" href="../polymer/polymer-element.html">
-
 <link rel="import" href="editable-button.html">
 <link rel="import" href="search-strategy.html">
+
+<!--
+A Polymer Element using for search.
+
+### Example
+```html
+<search-box
+  date-config='{"dateStart": "postingDate", "dateEnd": "postingDate"}'
+  search-fields-config="[[searchFieldsConfig]]"
+  free-text-search-fields="[[freeTextSearchFields]]"
+  search-parameters="{{searchParameters}}"
+  process-request="{{processRequest}}">
+</search-box>
+```
+
+@demo demo/index.html
+-->
+
 
 <dom-module id="search-box">
   <template>
@@ -36,7 +52,7 @@
         width: 100%;
         height: 100%;
         vertical-align: middle;
-
+        margin-left: 10px;
         --paper-input-container: {
           /* Make the height of the input element equal 30px. */
           padding: 4px 0 2px;
@@ -118,7 +134,6 @@
           no-label-float
           value={{inputContent::input}}
           placeholder="Enter Search Keywords">
-          <iron-icon icon="search" slot="prefix" />
         </paper-input>
         <div id="searchEditableButtons">
           <template is="dom-repeat" items="{{editableButtonItems}}" as="item">
@@ -173,84 +188,232 @@
       // defines the component's properties
       static get properties() {
         return {
+         /**
+          * (Optional)
+          *
+          * The icon property in the data in the searchFieldsConfig.
+          *
+          * @type {String}
+          * @default 'title'
+          */
           dataIconProperty: {
             type: String,
             value: 'icon'
           },
+         /**
+          * (Optional)
+          *
+          * The key property in the data in the searchFieldsConfig.
+          *
+          * @type {String}
+          * @default 'key'
+          */
           dataKeyProperty: {
             type: String,
             value: 'key'
           },
+         /**
+          * (Optional)
+          *
+          * The data property in the searchFieldsConfig.
+          *
+          * @type {String}
+          * @default 'data'
+          */
           dataProperty: {
             type: String,
             value: 'data'
           },
+         /**
+          * (Optional)
+          *
+          * The style class property in the data in the searchFieldsConfig.
+          *
+          * @type {String}
+          * @default 'title'
+          */
           dataStyleClassProperty: {
             type: String,
             value: 'styleClass'
           },
+         /**
+          * (Optional)
+          *
+          * The title property in the data in the searchFieldsConfig.
+          *
+          * @type {String}
+          * @default 'title'
+          */
           dataTitleProperty: {
             type: String,
             value: 'title'
           },
+         /**
+          * (Optional)
+          *
+          * The keys of dates in the searchFieldsConfig mapped to the keys of dates in the searchParameters.
+          *
+          * @type {Object}
+          * @default {}
+          */
           dateConfig: {
             type: Object,
             value: function() {
               return {};
             }
           },
+         /**
+          * (Optional)
+          *
+          * The editable button items used to generate editablebutton components.
+          *
+          * @type {Array}
+          * @default []
+          */
           editableButtonItems: {
             type: Array,
             notify: true
           },
+         /**
+          * (Optional)
+          *
+          * The fields used for free text search.
+          *
+          * @type {Array}
+          * @default []
+          */
           freeTextSearchFields: {
             type: Array
           },
+         /**
+          * (Optional)
+          *
+          * The input string entered by user.
+          *
+          * @type {String}
+          * @default ''
+          */
           inputContent: {
             type: String,
             observer: 'inputContentObserver'
           },
+         /**
+          * (Optional)
+          *
+          * The name property in the searchFieldsConfig.
+          *
+          * @type {String}
+          * @default 'name'
+          */
           nameProperty: {
             type: String,
             value: 'name',
           },
+         /**
+          * (Optional|Output)
+          *
+          * The network expansion parameters passed in.
+          *
+          * @type {Object}
+          */
           networkExpansionParameters: {
             type: Object,
             notify: true
           },
+         /**
+          * (Optional|Output)
+          *
+          * Whether to let queries run.
+          *
+          * @type {Boolean}
+          * @default false
+          */
           processRequest: {
             type: Boolean,
             value: false,
             notify: true
           },
+         /**
+          *
+          * The search fields used for generate search parameters and editable buttons.
+          *
+          * @type {Array}
+          */
           searchFields: {
             type: Array,
             computed: 'createSearchFields(searchFieldsConfig, dataProperty, nameProperty, typeProperty, dataIconProperty, dataKeyProperty, dataStyleClassProperty, dataTitleProperty)'
           },
+         /**
+          * (Required|Output)
+          *
+          * A list of objects that correspond to groupings of search fields.
+          *
+          * @type {Array}
+          */
           searchFieldsConfig: {
             type: Array
           },
+         /**
+          * (Required|Output)
+          *
+          * The search parameters created from the terms in the search box.
+          *
+          * @type {Object}
+          */  
           searchParameters: {
             type: Object,
             notify: true,
             reflectToAttribute: true
           },
+         /**
+          *
+          * The selected editable button when editing its content.
+          *
+          * @type {Object}
+          */  
           selectedEditableButton: {
             type: Object,
             value: null
           },
+         /**
+          *
+          * The selected field chosen from search strategy.
+          *
+          * @type {String}
+          */ 
           selectedField: {
             type: String,
             notify: true,
             value: null
           },
+         /**
+          *
+          * If to show the search startegy for field selection.
+          *
+          * @type {Boolean}
+          * @default false
+          */
           showSearchStrategy: {
             type: Boolean,
             value: false
           },
+         /**
+          *
+          * Timeout setting for showing search strategy.
+          *
+          * @type {Number}
+          */
           timeoutReference: {
             type: Number
           },
+         /**
+          * (Optional)
+          *
+          * The type property in the searchFieldsConfig.
+          *
+          * @type {String}
+          * @default 'type'
+          */
           typeProperty: {
             type: String,
             value: 'type',
@@ -265,7 +428,8 @@
           'selectedFieldObserver(selectedField)'
         ];
       }
-
+      
+      // ready
       ready() {
         super.ready();
         // handle input content press enter
@@ -284,7 +448,10 @@
         });
       }
 
-      // tap search button
+     /**
+      * Handle tap on search button.
+      *
+      */
       onTapSearchButton() {
         // if there is input contents
         if(this.inputContent.length !== 0) {
@@ -297,13 +464,29 @@
         }
       }
 
-      // tap clear button
+     /**
+      * Handle tap on clear search button.
+      *
+      */
       onTapClearSearchButton() {
         this.removeAllSearchTerms();
         this.handleSearch();
       }
 
-      // initialize serach fields
+     /**
+      * Creates and returns the search fields shown in the dialog.
+      *
+      * @param {Array} config
+      * @param {String} dataProperty
+      * @param {String} nameProperty
+      * @param {String} typeProperty
+      * @param {String} dataIconProperty
+      * @param {String} dataKeyProperty
+      * @param {String} dataStyleClassProperty
+      * @param {String} dataTitleProperty
+      * @param {String} dataTypeProperty
+      * @return {Array}
+      */
       createSearchFields(config, dataProperty, nameProperty, typeProperty, dataIconProperty, dataKeyProperty, dataStyleClassProperty, dataTitleProperty) {
         var freeTextSearchFieldsKey = this.freeTextSearchFields.map(val => {return val.key;});
         return (config || []).map(dialogConfig => {
@@ -349,12 +532,18 @@
         });
       }
 
-      // clear input content
+     /**
+      * Clear input content in the search box.
+      *
+      */
       clearInputContent() {
         this.inputContent = '';
       }
 
-      // show search strategy
+     /**
+      * Open search strategy.
+      *
+      */
       openSearchStrategy() {
         this.timeoutReference = false;
         if(!this.showSearchStrategy && this.freeTextSearchFields.length !== 0) {
@@ -362,7 +551,10 @@
         }
       }
 
-      // close search strategy
+     /**
+      * Close search strategy and reset timeout.
+      *
+      */
       closeSearchStrategy() {
         if(this.timeoutReference) {
           Polymer.Async.timeOut.cancel(this.timeoutReference);
@@ -371,7 +563,11 @@
         this.selectedField = null;
       }
 
-      // handleSearch
+     /**
+      * Handle search
+      * Update search fields, search parameters and editable buttons.
+      *
+      */
       handleSearch() {
         // update search fields
         this.updateSearchParametersFromFields(this.searchParameters);
@@ -391,17 +587,21 @@
           return;
         }
       }
-
+      
+     /**
+      * Handle search no updates
+      *
+      */
       handleSearchWithoutUpdateSearchParameters() {
-        // update editableButtonItems
-        // this.updateEditableButtonItems(this.searchParameters);
-
         // clear and close
         this.clearInputContent();
         this.closeSearchStrategy();
       }
 
-      // select the field in the search strategy
+     /**
+      * Observe selected fields change and handle search
+      *
+      */
       selectedFieldObserver() {
         if(this.freeTextSearchFields.length != 0 && this.showSearchStrategy && this.selectedField != null && this.inputContent.length != 0) {
           // update search fields first
@@ -418,7 +618,10 @@
         }
       }
 
-      // handle change on editable button field
+     /**
+      * Observe editable button field change, set selectedEditableButton flag
+      * @param {Object} event
+      */
       handleEditableButtonFieldChange(e) {
         // show search strategy
         this.openSearchStrategy();
@@ -426,7 +629,10 @@
         this.selectedEditableButton = e.model.item;
       }
 
-      // handle change on editable button content
+     /**
+      * Observe editable button content change and handle search
+      * @param {Object} event
+      */
       handleEditableButtonContentChange(e) {
         let field = e.model.item.fieldName;
         let oldContent = e.model.item.content;
@@ -440,7 +646,10 @@
         }
       }
 
-      // handle remove of editable button
+     /**
+      * Observe editable button remove change, remove the button and handle search
+      * @param {Object} event
+      */
       handleEditableButtonRemove(e) {
         let item = e.model.item;
         if(e.detail.value === true) {
@@ -451,17 +660,17 @@
         }
       }
 
-      // update search fields from input content
-      // enter / search button / select search strategy
+     /**
+      * Update search fields from input content by pressing enter or search button or choosing search field
+      * @param {Object} selectedField
+      * @param {String} content
+      */
       updateSearchFieldsFromInputContent(selectedField, content) {
         var self;
         var fieldTitle = 'Description';
         if(selectedField !== null) {
           fieldTitle = selectedField.fieldTitle;
         } 
-        // else {
-        //   fieldTitle = this._getContentField(content)
-        // }
         this.searchFields.forEach(function(dialogConfig) {
           dialogConfig.data.forEach(function(searchConfig) {
             searchConfig.activateNetworkExpansionPrevious = searchConfig.activateNetworkExpansion;
@@ -474,14 +683,14 @@
         });
       }
 
+     /**
+      * Automatic select phone, email, date field for specific content
+      * @param {String} content
+      * @private
+      */
       _getContentField(content) {
         // phone
-        /* (123) 456-7890
-           (123)456-7890
-            123-456-7890
-            123.456.7890
-            1234567890
-            +1234567890 */
+        // (123) 456-7890 (123)456-7890 123-456-7890 123.456.7890 1234567890 +1234567890
         var fields = []
         this.searchFields.map((dialogConfig) => {
           dialogConfig.data.map((searchConfig) => {
@@ -506,7 +715,12 @@
         return 'Description';
       }
 
-      // update search fields from EditableButton Field change
+     /**
+      * Update search fields from EditableButton field change
+      * @param {String} newField
+      * @param {String} oldField
+      * @param {String} content
+      */
       updateSearchFieldsFromNewEditableButtonField(newField, oldField, content) {
         this.searchFields.forEach(function(dialogConfig) {
           dialogConfig.data.forEach(function(searchConfig) {
@@ -523,7 +737,12 @@
         });
       }
 
-      // update search fields from EditableButton Field change
+     /**
+      * Update search fields from EditableButton content change
+      * @param {String} field
+      * @param {String} oldContent
+      * @param {String} newContent
+      */
       updateSearchFieldsFromNewEditableButtonContent(field, newContent, oldContent) {
         this.searchFields.forEach(function(dialogConfig) {
           dialogConfig.data.forEach(function(searchConfig) {
@@ -539,9 +758,14 @@
         });
       }
 
-      // update search fields when remove editable button
-      // or the content length is 0
-      updateSearchFieldsFromRemoveEditableButton(field, content, date, id) {
+    /**
+     * Update search fields when remove editable button or the content length is 0
+     * @param {String} field
+     * @param {String} content
+     * @param {String} date
+     * @param {String} id
+     */
+     updateSearchFieldsFromRemoveEditableButton(field, content, date, id) {
         this.searchFields.forEach(function(dialogConfig) {
           dialogConfig.data.forEach(function(searchConfig) {
             searchConfig.activateNetworkExpansionPrevious = searchConfig.activateNetworkExpansion;
@@ -565,9 +789,11 @@
             }
           });
         });
-        // this.notifyPath(['searchParameters'], this.searchParameters);
       }
 
+     /**
+      * Updates the searchParameters using the search fields.
+      */
       updateSearchParametersFromFields() {
         var self = this;
         this.processRequest = false;
@@ -577,9 +803,7 @@
               dialogConfig.data.forEach((searchConfig) => {
                 if(dialogConfig.isDate) {
                   self.updateDateParameterFromField(searchConfig);
-                } else if(dialogConfig.isImage) {
-                  // self.updateImageParameterFromGallery(searchConfig);
-                } else {
+                } else if(!dialogConfig.isImage && !dialogConfig.isDate) {
                   self.updateSearchParameterFromField(searchConfig);
                 }
               });
@@ -589,6 +813,11 @@
         this.processRequest = true;
       }
 
+     /**
+      * Updates the searchParameters and networkExpansionParameters using the given config object by adding or removing search terms.
+      *
+      * @param {Object} searchConfig
+      */
       updateDateParameterFromField(searchConfig) {
         var parameterKey = this.dateConfig[searchConfig.key];
         // TODO Don't assume data structure.
@@ -601,19 +830,32 @@
         }
       }
 
+     /**
+      * Updates the searchParameters with a new date object and notifies observers.
+      *
+      * @param {String} key
+      * @param {Object} date
+      * @param {String} text
+      * @param {String} category
+      * @param {Boolean} enabled
+      * @private
+      */
       _updateDateParameterAndNotify(key, date, text, category, enabled) {
         var parameterKey = this.dateConfig[key];
         this.searchParameters[parameterKey][key] = this._buildSearchParameter(category, enabled, key, text, 'required', date);
         this.notifyPath(['searchParameters', parameterKey, key], this.searchParameters[parameterKey][key]);
       }
 
+     /**
+      * Updates the searchParameters and networkExpansionParameters using the given config object by adding or removing search terms.
+      *
+      * @param {Object} searchConfig
+      */
       updateSearchParameterFromField(searchConfig) {
         var self = this;
 
         let field = searchConfig.key;
-        // var searchConfigValues = this.getSearchConfigValue(field, searchConfig.value, this.searchParameters[field]);
-        // var searchTermToSearchStatus = searchConfigValues.map
-        // var searchTermToSearchStatus = searchConfig.value.split(',').map
+
         var searchTermToSearchStatus = searchConfig.value.map(term => {
           return term.trim();
         }).reduce((searchTermToSearchStatus, term) => {
@@ -663,6 +905,12 @@
         }
       }
 
+     /**
+      * Updates the searchParameters for the given searchConfig using the given search terms.
+      *
+      * @param {Object} searchConfig
+      * @param {Array} searchTermToSearchStatus
+      */
       updateSearchParameterTerms(searchConfig, searchTermToSearchStatus) {
 
         var self = this;
@@ -680,30 +928,19 @@
             self.searchParameters[searchConfig.key][term] = self._buildSearchParameter(searchConfig.title, true, term, term, searchTermToSearchStatus[term]);
           }
         });
-        // this.notifyPath(['searchParameters', searchConfig.key], this.searchParameters[searchConfig.key]);
       }
 
-      // not used
-      getSearchConfigValue(field, fieldValues, searchParameter) {
-        // inputnewcontent -> searchparameter do not contain
-        // inputnewcontenthascomma -> searchparameter only have old items
-        // inputnewcontent -> searchparamter has comma, remove what in search parameter
-        let values = [];
-        if(fieldValues.length !== 0) {
-          fieldValues = fieldValues.concat(',');
-          Object.keys(searchParameter).forEach(function(key) {
-            if(fieldValues.includes(key.concat(','))) {
-              fieldValues = fieldValues.replace(key.concat(','), '');
-              values.push(key);
-            }
-          });
-          if(fieldValues.length !== 0) {
-            values.push(fieldValues.slice(0, -1));
-          }
-        }
-        return values;
-      }
-
+     /**
+      *
+      * A function that transforms search parameter data into a search parameter object.
+      *
+      * @param {String} category
+      * @param {String} enabled
+      * @param {String} key
+      * @param {String} text
+      * @param {String} search
+      * @param {String} date
+      */
       _buildSearchParameter(category, enabled, key, text, search, date) {
         return {
           category: category,
@@ -715,6 +952,12 @@
         };
       }
 
+     /**
+      *
+      * A function that returns whether all the search parameters in the given object are disabled (or empty).
+      *
+      * @param {Object} searchParameters
+      */
       areSearchParametersDisabled(searchParameters) {
         return _.keys(searchParameters).every(function(type) {
           if(_.isEmpty(searchParameters[type])) {
@@ -725,7 +968,11 @@
           });
         });
       }
-
+      
+     /**
+      * Observe input content and set timeout
+      *
+      */
       inputContentObserver() {
         let self = this;
         if(this.timeoutReference) {
@@ -734,6 +981,10 @@
         this.timeoutReference = Polymer.Async.timeOut.run(() => self.openSearchStrategy(), 1500);
       }
 
+     /**
+      * Observe search parameters for changes in the facet, and handle search
+      *
+      */
       searchParametersObserver() {
         this.updateEditableButtonItems(this.searchParameters);
         var self = this;
@@ -743,9 +994,7 @@
               dialogConfig.data.forEach(function(searchConfig, searchIndex) {
                 if(dialogConfig.isDate) {
                   self.updateDateFieldFromParameter(searchConfig, ['searchFields', dialogIndex, 'data', searchIndex]);
-                } else if(dialogConfig.isImage) {
-                  // self.updateImageGalleryFromParameter(searchConfig, ['searchFields', dialogIndex, 'data', searchIndex]);
-                } else {
+                } else if(!dialogConfig.isImage && !dialogConfig.isDate) {
                   self.updateSearchFieldFromParameter(searchConfig, ['searchFields', dialogIndex, 'data', searchIndex]);
                 }
               });
@@ -755,6 +1004,12 @@
         }
       }
 
+     /**
+      * Updates the date input of the given config object using the searchParameters and notifies observers on the given path.
+      *
+      * @param {Object} searchConfig
+      * @param {Array|String} updatePath
+      */
       updateDateFieldFromParameter(searchConfig, updatePath) {
         var parameterKey = this.dateConfig[searchConfig.key];
         searchConfig.value = {};
@@ -763,13 +1018,16 @@
         }
         this.notifyPath(updatePath.concat('value'), searchConfig.value);
       }
-
-      updateImageGalleryFromParameter() {
-      }
-
+      
+     /**
+      * Updates the search field input of the given config object using the searchParameters and notifies observers on the given path.
+      *
+      * @param {Object} searchConfig
+      * @param {Array|String} updatePath
+      */
       updateSearchFieldFromParameter(searchConfig, updatePath) {
         var self = this;
-        var termData = _.keys(this.searchParameters[searchConfig.key]).filter(function(term) {
+        var termData = Object.keys(this.searchParameters[searchConfig.key]).filter(function(term) {
           return self.getSearchParameterData(self.searchParameters[searchConfig.key][term]).enabled;
         }).map(function(term) {
           return self.getSearchParameterData(self.searchParameters[searchConfig.key][term]);
@@ -790,22 +1048,6 @@
           }
           return data.text;
         });
-        // searchConfig.value = termData.map(function(data) {
-        //   if(data.search === 'required') {
-        //     return '+' + data.text;
-        //   }
-        //   if(data.search === 'excluded') {
-        //     return '-' + data.text;
-        //   }
-        //   if(data.search === 'lessthan') {
-        //     return '<' + data.text;
-        //   }
-        //   if(data.search === 'morethan') {
-        //     return '>' + data.text;
-        //   }
-        //   return data.text;
-        // }).join(', ');
-        // this.$$('#input_' + searchConfig.key).value = searchConfig.value;
 
         searchConfig.activateNetworkExpansion = this.networkExpansionParameters[searchConfig.key] || searchConfig.activateNetworkExpansion;
         this.notifyPath(updatePath.concat(['activateNetworkExpansion']), searchConfig.activateNetworkExpansion);
@@ -816,6 +1058,9 @@
         this.notifyPath(updatePath.concat(['requireOne']), searchConfig.requireOne);
       }
 
+     /**
+      * Removes all of the search terms from fields in the dialog.
+      */
       removeAllSearchTerms() {
         this._uploadedFiles = [];
         if(this.searchFields) {
@@ -829,8 +1074,6 @@
                 } else if(dialogConfig.isImage) {
                   self.set(['searchFields', dialogIndex, 'data', searchIndex, 'selected'], []);
                 } else {
-                  // self.$$('#editableButton_' + searchConfig.key).value = '';
-                  // self.set(['searchFields', dialogIndex, 'data', searchIndex, 'value'], '');
                   self.set(['searchFields', dialogIndex, 'data', searchIndex, 'value'], []);
                   self.set(['searchFields', dialogIndex, 'data', searchIndex, 'requireOne'], true);
                   if(searchConfig.enableNetworkExpansion) {
@@ -843,6 +1086,11 @@
         }
       }
 
+     /**
+      * Update editable button items from changes in serach parameters.
+      *
+      * @param {Object} searchParameters
+      */
       updateEditableButtonItems(searchParameters) {
         var self = this;
         var items = [];
@@ -885,6 +1133,12 @@
         this.editableButtonItems = items;
       }
 
+     /**
+      * Get field icon from field key.
+      *
+      * @param {Object} fieldKey
+      * @return {String}
+      */
       getField(fieldKey) {
         let fieldIcon = {};
         this.searchFields.forEach((dialogConfig) => {
@@ -902,10 +1156,22 @@
         return fieldIcon;
       }
 
+     /**
+      * Only display first 10 characters, add ellipsis at the end if content's length larger than 10
+      * 
+      * @param {String} content
+      * @return {String}
+      */
       getDisplayContent(content) {
         return content.length > 10 ? content.slice(0,10).concat('...') : content;
       }
 
+     /**
+      * Get specific search parameter data
+      * 
+      * @param {Object} searchParameter
+      * @return {Object}
+      */
       getSearchParameterData(searchParameter) {
         return {
           enabled: searchParameter.enabled,
@@ -914,13 +1180,19 @@
         };
       }
 
+     /**
+      * Returns a string of unformatted phones separated by newlines.
+      *
+      * @param {String} phone
+      * @return {String}
+      * @private
+      */
       _unformatPhones(phone) {
         // Replace all delimiters (whitespace, commas, and, semicolons) with single spaces.
         return phone.replace(/[\s,;]/g, ' ')
           // Remove all non-digit, non-whitespace characters.
           .replace(/[^\d\s]/g, '')
           // Remove extra spaces.
-          // .replace(/\s+/g, '\n')
           .replace(/\s+/g, ' ')
           .trim();
       }

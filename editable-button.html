@@ -1,9 +1,30 @@
-<!-- define the component in polymer -->
+<!--
+A Polymer Element showing search fields in a modal dialog.
+
+### Example
+```html
+<editable-button
+  field-icon="[[item.fieldIcon]]"
+  field-name="[[item.fieldName]]"
+  field-style-class="[[item.fieldStyle]]"
+  content="{{item.content}}"
+  remove="[[item.remove]]"
+  display-content="{{item.displayContent}}"
+  selected="{{item.selected}}"
+  on-remove-changed="handleEditableButtonRemove"
+  on-selected-changed="handleEditableButtonFieldChange">
+</editable-button>
+```
+
+@demo demo/index.html
+-->
+
 <dom-module id="editable-button">
   <template>
     <style>
       :host {
         display: inline-flex;
+        margin: 2px 0px;
       }
 
       .editableButtonIcon, .editableButtonRemoveButton {
@@ -26,6 +47,7 @@
           background: white;
           color: var(--primary-text-color, #111);
         };
+        text-transform: none;
       }
 
       .editableButtonTextInput {
@@ -186,35 +208,81 @@
       // defines the component's properties
       static get properties() {
         return {
-          buttonID: {
-            type: Number
-          },
+         /**
+          * (Required)
+          *
+          * Actual content of the button
+          *
+          * @type {String}
+          */
           content: {
             type: String,
             reflectToAttribute: true,
             notify: true,
             observer: '_handleValueChange'
           },
+         /**
+          * (Required)
+          *
+          * Display content in the button
+          *
+          * @type {String}
+          */
           displayContent: {
             type: String,
             reflectToAttribute: true,
             notify: true
           },
+         /**
+          * (Required)
+          *
+          * Field name of the content
+          *
+          * @type {String}
+          */
           fieldName: {
             type: String
           },
+         /**
+          * (Required)
+          *
+          * Field icon of the content
+          *
+          * @type {String}
+          */
           fieldIcon: {
             type: String,
             notify: true,
           },
+         /**
+          * (Required)
+          *
+          * Field icon color style of the content
+          *
+          * @type {String}
+          */
           fieldStyleClass: {
             type: String,
             notify: true
           },
+         /**
+          * (Optional | Output)
+          *
+          * Whether to remove the button or not
+          *
+          * @type {Boolean}
+          */
           remove: {
             type: Boolean,
             notify: true
           },
+         /** 
+          * (Optional | Output)
+          *
+          * Whether to remove the button or not
+          *
+          * @type {Boolean}
+          */
           selected: {
             type: Boolean,
             notify: true
@@ -250,24 +318,44 @@
         });
       }
 
-      // get display content, resize and add ellipsis if content larger then 10
+     /**
+      * Only display first 10 characters, add ellipsis at the end if content's length larger than 10
+      * 
+      * @param {String} content
+      * @return {String}
+      * @private
+      */
       _getDisplayContent() {
         return this.content.length > 10 ? this.content.slice(0,10).concat('...') : this.content;
       }
 
-      // remove the whoe button
+     /**
+      * Handle tap of close button, then set remove property
+      * 
+      * @private
+      */
       _handleCloseTap() {
         this.remove = true;
       }
 
-      // update border style
+     /**
+      * Update border sytle when click to edit content.
+      * 
+      * @param {String} style
+      * @private
+      */
       _updateBorderStyle(style) {
         this.updateStyles({
           '--textinput-border': style,
         });
       }
 
-      // change selected field
+     /**
+      * Set the editable button as selected
+      * 
+      * @param {Object} event
+      * @private
+      */
       _handleFieldTap(e) {
         if(this.selected === false) {
           this.selected = true;

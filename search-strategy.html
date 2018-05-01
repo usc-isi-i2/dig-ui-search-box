@@ -1,4 +1,17 @@
-<!-- define the component in polymer -->
+<!--
+A Polymer Element showing search strategy.
+
+### Example
+```html
+<search-strategy
+  free-text-search-fields="[[freeTextSearchFields]]"
+  selected-field="{{selectedField}}">
+</search-strategy>
+```
+
+@demo demo/index.html
+-->
+
 <dom-module id="search-strategy">
   <template>
     <style>
@@ -146,14 +159,35 @@
       // defines the component's properties
       static get properties() {
         return {
+         /**
+          * (Required)
+          *
+          * List of search fields objects for the free text search each containing {String} key, {String} title, and optionally {String} type.
+          *
+          * @type {Array}
+          */
           freeTextSearchFields: {
             type: Array
           },
+         /**
+          * (Required | Output)
+          *
+          * Selected field
+          *
+          * @type {String}
+          */
           selectedField: {
             type: String,
             notify: true,
             reflectToAttribute: true,
           },
+         /**
+          * (Output)
+          *
+          * All candidate fields from free text search fields
+          *
+          * @type {Array}
+          */
           categories: {
             type: Array,
             computed: '_generateCategories()',
@@ -161,12 +195,21 @@
         };
       }
 
-      // set selected field
+     /**
+      * Set selected field chosen by user.
+      *
+      * @param {Object} event
+      * @private
+      */
       _selection(e) {
         this.$.selector.select(e.model.item);
       }
 
-      // generate all free text search fields
+     /**
+      * Generate all free text search fields
+      *
+      * @private
+      */
       _generateCategories() {
         return this.freeTextSearchFields.map(function(val) {
           return {
