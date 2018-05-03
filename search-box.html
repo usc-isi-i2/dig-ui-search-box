@@ -1164,7 +1164,12 @@ A Polymer Element using for free text search.
       * @return {String}
       */
       getDisplayContent(content) {
-        return content.length > 10 ? content.slice(0,10).concat('...') : content;
+        let displayContent = content;
+        if(content.indexOf('+') === 0 || content.indexOf('-') === 0 || content.indexOf('<') === 0 || content.indexOf('>') === 0) {
+          displayContent = displayContent.substring(1);
+        }
+
+        return displayContent.length > 10 ? displayContent.slice(0,10).concat('...') : displayContent;
       }
 
      /**

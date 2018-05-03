@@ -325,7 +325,11 @@ A Polymer Element showing search items which could edit item field and content.
       * 
       */
       _getDisplayContent() {
-        return this.content.length > 10 ? this.content.slice(0,10).concat('...') : this.content;
+        let displayCont = content;
+        if(content.indexOf('+') === 0 || content.indexOf('-') === 0 || content.indexOf('<') === 0 || content.indexOf('>') === 0) {
+          displayCont = displayCont.substring(1);
+        }
+        return displayCont.length > 10 ? displayCont.slice(0,10).concat('...') : displayCont;
       }
 
      /**
