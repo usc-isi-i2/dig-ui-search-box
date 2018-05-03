@@ -1,22 +1,21 @@
 <!--
-A Polymer Element showing search fields in a modal dialog.
+A Polymer Element showing search items which could edit item field and content.
 
 ### Example
 ```html
 <editable-button
-  field-icon="[[item.fieldIcon]]"
-  field-name="[[item.fieldName]]"
-  field-style-class="[[item.fieldStyle]]"
-  content="{{item.content}}"
-  remove="[[item.remove]]"
-  display-content="{{item.displayContent}}"
-  selected="{{item.selected}}"
+  field-icon="[[fieldIcon]]"
+  field-name="[[fieldName]]"
+  field-style-class="[[fieldStyle]]"
+  content="{{content}}"
+  remove="[[remove]]"
+  display-content="{{displayContent}}"
+  selected="{{selected}}"
   on-remove-changed="handleEditableButtonRemove"
   on-selected-changed="handleEditableButtonFieldChange">
 </editable-button>
 ```
 
-@demo demo/index.html
 -->
 
 <dom-module id="editable-button">
@@ -323,7 +322,7 @@ A Polymer Element showing search fields in a modal dialog.
       * 
       * @param {String} content
       * @return {String}
-      * @private
+      * 
       */
       _getDisplayContent() {
         return this.content.length > 10 ? this.content.slice(0,10).concat('...') : this.content;
@@ -332,7 +331,7 @@ A Polymer Element showing search fields in a modal dialog.
      /**
       * Handle tap of close button, then set remove property
       * 
-      * @private
+      * 
       */
       _handleCloseTap() {
         this.remove = true;
@@ -342,7 +341,7 @@ A Polymer Element showing search fields in a modal dialog.
       * Update border sytle when click to edit content.
       * 
       * @param {String} style
-      * @private
+      * 
       */
       _updateBorderStyle(style) {
         this.updateStyles({
@@ -354,7 +353,7 @@ A Polymer Element showing search fields in a modal dialog.
       * Set the editable button as selected
       * 
       * @param {Object} event
-      * @private
+      * 
       */
       _handleFieldTap(e) {
         if(this.selected === false) {

@@ -9,7 +9,6 @@ A Polymer Element showing search strategy.
 </search-strategy>
 ```
 
-@demo demo/index.html
 -->
 
 <dom-module id="search-strategy">
@@ -199,7 +198,7 @@ A Polymer Element showing search strategy.
       * Set selected field chosen by user.
       *
       * @param {Object} event
-      * @private
+      * 
       */
       _selection(e) {
         this.$.selector.select(e.model.item);
@@ -208,7 +207,6 @@ A Polymer Element showing search strategy.
      /**
       * Generate all free text search fields
       *
-      * @private
       */
       _generateCategories() {
         return this.freeTextSearchFields.map(function(val) {

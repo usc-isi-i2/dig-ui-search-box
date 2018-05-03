@@ -19,3 +19,11 @@ Dependencies are installed using [Bower](http://bower.io/):
 
     npm install -g bower
     bower install
+
+
+### Demonstration & Documentation
+
+Demonstration and documentation are viewed using [Polymer CLI](https://www.polymer-project.org/2.0/docs/tools/polymer-cli):
+
+    npm install -g polymer-cli
+    polymer serve

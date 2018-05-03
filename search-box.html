@@ -4,7 +4,7 @@
 <link rel="import" href="search-strategy.html">
 
 <!--
-A Polymer Element using for search.
+A Polymer Element using for free text search.
 
 ### Example
 ```html
@@ -16,10 +16,9 @@ A Polymer Element using for search.
   process-request="{{processRequest}}">
 </search-box>
 ```
-
-@demo demo/index.html
+@customElement
+@polymer
 -->
-
 
 <dom-module id="search-box">
   <template>
@@ -179,7 +178,8 @@ A Polymer Element using for search.
   </template>
 
   <script>
-    class searchBox extends Polymer.Element {
+    
+    class SearchBox extends Polymer.Element {
       // returns the name of the component
       static get is() {
         return 'search-box';
@@ -488,7 +488,6 @@ A Polymer Element using for search.
       * @return {Array}
       */
       createSearchFields(config, dataProperty, nameProperty, typeProperty, dataIconProperty, dataKeyProperty, dataStyleClassProperty, dataTitleProperty) {
-        console.log("searchconfig", config);
         var freeTextSearchFieldsKey = this.freeTextSearchFields.map(val => {return val.key;});
         return (config || []).map(dialogConfig => {
           var isDate = dialogConfig[typeProperty] === 'date';
@@ -690,7 +689,6 @@ A Polymer Element using for search.
      /**
       * Automatic select phone, email, date field for specific content
       * @param {String} content
-      * @private
       */
       _getContentField(content) {
         // phone
@@ -842,7 +840,6 @@ A Polymer Element using for search.
       * @param {String} text
       * @param {String} category
       * @param {Boolean} enabled
-      * @private
       */
       _updateDateParameterAndNotify(key, date, text, category, enabled) {
         var parameterKey = this.dateConfig[key];
@@ -1189,7 +1186,6 @@ A Polymer Element using for search.
       *
       * @param {String} phone
       * @return {String}
-      * @private
       */
       _unformatPhones(phone) {
         // Replace all delimiters (whitespace, commas, and, semicolons) with single spaces.
@@ -1202,6 +1198,6 @@ A Polymer Element using for search.
       }
     }
 
-    window.customElements.define(searchBox.is, searchBox);
+    customElements.define(SearchBox.is, SearchBox);
   </script>
 </dom-module>
