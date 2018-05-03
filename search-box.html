@@ -488,6 +488,7 @@ A Polymer Element using for search.
       * @return {Array}
       */
       createSearchFields(config, dataProperty, nameProperty, typeProperty, dataIconProperty, dataKeyProperty, dataStyleClassProperty, dataTitleProperty) {
+        console.log("searchconfig", config);
         var freeTextSearchFieldsKey = this.freeTextSearchFields.map(val => {return val.key;});
         return (config || []).map(dialogConfig => {
           var isDate = dialogConfig[typeProperty] === 'date';
@@ -499,11 +500,11 @@ A Polymer Element using for search.
                 key: searchConfig[dataKeyProperty],
                 styleClass: searchConfig[dataStyleClassProperty],
                 title: searchConfig[dataTitleProperty],
-                freeText: freeTextSearchFieldsKey.includes(searchConfig[dataKeyProperty])
+                freeText: freeTextSearchFieldsKey.includes(searchConfig[dataKeyProperty]),
+                type: searchConfig['type']
               };
 
               if(!isImage) {
-                // item.value = isDate ? {} : '';
                 item.value = isDate ? {} : [];
               }
 
@@ -667,10 +668,13 @@ A Polymer Element using for search.
       */
       updateSearchFieldsFromInputContent(selectedField, content) {
         var self;
-        var fieldTitle = 'Description';
+        var fieldTitle;
         if(selectedField !== null) {
           fieldTitle = selectedField.fieldTitle;
-        } 
+        } else {
+          fieldTitle = this._getContentField(content);
+          // fieldTitle = 'Description';
+        }
         this.searchFields.forEach(function(dialogConfig) {
           dialogConfig.data.forEach(function(searchConfig) {
             searchConfig.activateNetworkExpansionPrevious = searchConfig.activateNetworkExpansion;
@@ -691,25 +695,25 @@ A Polymer Element using for search.
       _getContentField(content) {
         // phone
         // (123) 456-7890 (123)456-7890 123-456-7890 123.456.7890 1234567890 +1234567890
-        var fields = []
+        var fields = {}
         this.searchFields.map((dialogConfig) => {
           dialogConfig.data.map((searchConfig) => {
-            fields.push(searchConfig.key);
+            fields[searchConfig.type] = searchConfig.title;
           });
         });
         var re_phone = RegExp(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im);
-        if(re_phone.test(content) && fields.includes('phone')) {
-          return 'Phone';
+        if(re_phone.test(content) && 'phone' in fields) {
+          return fields['phone'];
         }
         // email
         var re_email = RegExp(/^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i);
-        if(re_email.test(content) && fields.includes('email')) {
-          return 'Email';
+        if(re_email.test(content) && 'email' in fields) {
+          return fields['email'];
         }
         // date
         var re_date = RegExp(/^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/);
         if(re_date.test(content)) {
-          // return ''
+          // need to implement
         }
         // default
         return 'Description';
